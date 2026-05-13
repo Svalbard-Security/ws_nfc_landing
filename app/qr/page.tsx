@@ -39,14 +39,31 @@ const SERVICES = [
   },
 ] as const;
 
+function isValidEmail(v: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+}
+
+function isValidPhone(v: string) {
+  // Allow +, digits, spaces, dashes, dots, parentheses — min 7 digits
+  const digits = v.replace(/\D/g, "");
+  return /^[+\d][\d\s\-().]{5,}$/.test(v.trim()) && digits.length >= 7;
+}
+
 export default function QRPage() {
   const [step, setStep] = useState<Step>("services");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [emailTouched, setEmailTouched] = useState(false);
   const [phone, setPhone] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
+
+  const emailValid = isValidEmail(email);
+  const phoneValid = phone.trim() === "" || isValidPhone(phone);
+  const emailError = emailTouched && email.trim() !== "" && !emailValid;
+  const phoneError = phoneTouched && phone.trim() !== "" && !phoneValid;
 
   const toggleService = useCallback((id: string) => {
     setSelected((prev) => {
@@ -253,29 +270,57 @@ export default function QRPage() {
                     />
                   </div>
                   <div>
-                    <label className="block font-mono text-[10px] tracking-[0.15em] text-[#4b5563]">
-                      EMAIL *
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="block font-mono text-[10px] tracking-[0.15em] text-[#4b5563]">
+                        EMAIL *
+                      </label>
+                      {emailTouched && email.trim() !== "" && (
+                        <span className={`font-mono text-[9px] tracking-wider ${emailValid ? "text-green-500" : "text-red-400"}`}>
+                          {emailValid ? "✓ VALID" : "✗ INVALID FORMAT"}
+                        </span>
+                      )}
+                    </div>
                     <input
                       type="email"
                       autoComplete="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      onBlur={() => setEmailTouched(true)}
                       placeholder="you@company.com"
-                      className="mt-1.5 w-full border border-[#1a1d20] bg-[#0d0f10] px-3 py-3 font-mono text-sm text-[#e8eaed] outline-none placeholder:text-[#374151] focus:border-green-500/60 focus:ring-1 focus:ring-green-500/20"
+                      className={`mt-1.5 w-full border bg-[#0d0f10] px-3 py-3 font-mono text-sm text-[#e8eaed] outline-none placeholder:text-[#374151] focus:ring-1 ${
+                        emailError
+                          ? "border-red-500/60 focus:border-red-500/60 focus:ring-red-500/20"
+                          : emailTouched && emailValid
+                            ? "border-green-500/60 focus:border-green-500/60 focus:ring-green-500/20"
+                            : "border-[#1a1d20] focus:border-green-500/60 focus:ring-green-500/20"
+                      }`}
                     />
                   </div>
                   <div>
-                    <label className="block font-mono text-[10px] tracking-[0.15em] text-[#4b5563]">
-                      PHONE
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="block font-mono text-[10px] tracking-[0.15em] text-[#4b5563]">
+                        PHONE
+                      </label>
+                      {phoneTouched && phone.trim() !== "" && (
+                        <span className={`font-mono text-[9px] tracking-wider ${phoneValid ? "text-green-500" : "text-red-400"}`}>
+                          {phoneValid ? "✓ VALID" : "✗ INVALID FORMAT"}
+                        </span>
+                      )}
+                    </div>
                     <input
                       type="tel"
                       autoComplete="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
+                      onBlur={() => setPhoneTouched(true)}
                       placeholder="+1 (416) 000-0000"
-                      className="mt-1.5 w-full border border-[#1a1d20] bg-[#0d0f10] px-3 py-3 font-mono text-sm text-[#e8eaed] outline-none placeholder:text-[#374151] focus:border-green-500/60 focus:ring-1 focus:ring-green-500/20"
+                      className={`mt-1.5 w-full border bg-[#0d0f10] px-3 py-3 font-mono text-sm text-[#e8eaed] outline-none placeholder:text-[#374151] focus:ring-1 ${
+                        phoneError
+                          ? "border-red-500/60 focus:border-red-500/60 focus:ring-red-500/20"
+                          : phoneTouched && phone.trim() !== "" && phoneValid
+                            ? "border-green-500/60 focus:border-green-500/60 focus:ring-green-500/20"
+                            : "border-[#1a1d20] focus:border-green-500/60 focus:ring-green-500/20"
+                      }`}
                     />
                   </div>
                 </div>
@@ -290,7 +335,7 @@ export default function QRPage() {
               <div className="mt-4 space-y-2">
                 <button
                   type="button"
-                  disabled={submitting || !fullName.trim() || !email.trim()}
+                  disabled={submitting || !fullName.trim() || !emailValid || !phoneValid}
                   onClick={submitLead}
                   className="w-full bg-green-500 py-4 font-mono text-sm font-bold tracking-widest text-black transition active:brightness-90 disabled:cursor-not-allowed disabled:opacity-40"
                 >
